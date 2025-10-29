@@ -1,23 +1,110 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
+	"os"
 )
+/*
+	3.3 Dependancy injection
+
+	// Define an application struct to hold the application-wide dependencies for the
+	// web application. For now we'll only include fields for the two custom loggers, but
+	// we'll add more to it as the build progresses.
+*/
+type application struct {
+	errorLog	*log.Logger
+	infoLog		*log.Logger
+}
 
 func main() {
+	// Define a new command-line flag with the name 'addr', a default value of ":4000"
+	// and some short help text explaining what the flag controls. The value of the
+	// flag will be stored in the addr variable at runtime.
+	addr := flag.String("addr", ":4000", "HTTP newtwork address")
 
-	mux := http.NewServeMux()
+	// Importantly, we use the flag.Parse() function to parse the commandline flag.
+	// This reads in the command-line flag value and assigns it to the addr
+	// variable. You need to call this *before* you use the addr variable
+	// otherwise it will always contain the default value of ":4000". If any errors are
+	// encountered during parsing the application will be terminated.
+	flag.Parse()
 
-	filerServer := http.FileServer(http.Dir("./ui/static"))
+	// Use log.New() to create a logger for writing information messages. This takes
+	// three parameters: the destination to write the logs to (os.Stdout), a string
+	// prefix for message (INFO followed by a tab), and flags to indicate what
+	// additional information to include (local date and time). Note that the flags
+	// are joined using the bitwise OR operator |.
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 
-	mux.Handle("/static/", http.StripPrefix("/static", filerServer))
+	// Create a logger for writing error messages in the same way, but use stderr as
+	// the destination and use the log.Lshortfile flag to include the relevant
+	// file name and line number.
+	errorLog := log.New(os.Stderr, "Error\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
+	/*
+		// 3.3 Dependency Injection
 
-	log.Print("Starting server on :4000")
-	err := http.ListenAndServe(":4000", mux)
-	log.Fatal(err)
+		// Initialize a new instance of our application struct, containing the
+		// dependencies.
+	*/
+	app := &application{
+		errorLog: errorLog,
+		infoLog: infoLog,
+	}
+
+	// mux := http.NewServeMux()
+	// filerServer := http.FileServer(http.Dir("./ui/static"))
+	// mux.Handle("/static/", http.StripPrefix("/static", filerServer))
+
+	/*
+		// 3.3 Dependency Injection
+
+		// Swap the route declarations to use the application struct's methods as the
+		// handler functions.
+	*/
+	// mux.HandleFunc("/", app.home)
+	// mux.HandleFunc("/snippet/view", app.snippetView)
+	// mux.HandleFunc("/snippet/create", app.snippetCreate)
+
+	
+
+	/*
+		// The value returned from the flag.String() function is a pointer to the flag
+		// value, not the value itself. So we need to dereference the pointer (i.e.
+		// prefix it with the * symbol) before using it. Note that we're using the
+		// log.Printf() function to interpolate the address with the log message.
+	*/
+	// log.Printf("Staring the server on %s", *addr)
+	// err := http.ListenAndServe(*addr, mux)
+	// log.Fatal(err)
+
+	// Write messages using the two new loggers, instead of the standard logger.
+	// infoLog.Printf("Staring server on %s", *addr)
+	// err := http.ListenAndServe(*addr, mux)
+	// errorLog.Fatal(err)
+
+//----------------------------------------------------
+
+	/*
+		// Section 3.2: The http.Server error log
+
+		// Initialize a new http.Server struct. We set the Addr and Handler fields so
+		// that the server uses the same network address and routes as before, and set
+		// the ErrorLog field so that the server now uses the custom errorLog logger in
+		// the event of any problems.
+	*/
+	srv := &http.Server{
+		Addr:	*addr,
+		ErrorLog: errorLog,
+		// Handler:	mux,
+		Handler: app.routes(),
+	}
+
+	infoLog.Printf("Staring server on %s", *addr)
+
+	// Call the ListenAndServe() method on our new http.Server struct.
+	err := srv.ListenAndServe()
+	errorLog.Fatal(err)
 }
