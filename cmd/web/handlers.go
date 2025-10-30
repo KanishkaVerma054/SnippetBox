@@ -1,119 +1,120 @@
 package main
 
 import (
+	"KanishkaVerma054/snipperBox.dev/internal/models"
+	"errors"
 	"fmt"
+	// "html/template"
 	"net/http"
 	"strconv"
-	"html/template"
-	// "log"
 )
-
-/*
-	3.3 Dependency Injection
-	// Change the signature of the home handler so it is defined as a method against
-	// *application.
-*/
 
 func(app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Path != "/" {
-		// http.NotFound(w, r)
-		app.notFound(w) // 3.4 Centralized Error: Use the notFound() helper
+		app.notFound(w)
 		return
 	}
 
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/partials/nav.html",
-		"./ui/html/pages/home.html",
-	}
-
-	ts, err := template.ParseFiles(files...)
+	snippets, err := app.snippets.Latest()
 	if err != nil {
-		// log.Print(err.Error()) // This isn't using our new error logger.
-
-	/*
-	// 3.3 Dependency Injection 
-
-		// Because the home handler function is now a method against application
-		// it can access its fields, including the error logger. We'll write the log
-		// message to this instead of the standard logger.
-	*/
-		// app.errorLog.Print(err.Error())
-		// http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-
-		/*
-			// 3.4 Centralized Error:
-		*/
-		app.serverError(w, err) //Use the serverError() helper.
-
+		app.serverError(w, err)
 		return
 	}
 
-	err = ts.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		// log.Print(err.Error())
-
-		/*
-			3.3 Dependency Injection
-
-			// Also update the code here to use the error logger from the application
-			// struct.
-		*/
-		// app.errorLog.Print(err.Error())
-		// http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-
-		/*
-			// 3.4 Centralized Error:
-		*/
-		app.serverError(w, err) // Use the serverError() helper.
-
-
+	for _, snippet := range snippets {
+		fmt.Fprintf(w, "%+v\n", snippet)
 	}
+
+	// files := []string{
+	// 	"./ui/html/base.html",
+	// 	"./ui/html/partials/nav.html",
+	// 	"./ui/html/pages/home.html",
+	// }
+
+	// ts, err := template.ParseFiles(files...)
+	// if err != nil {
+	// 	app.serverError(w, err) 
+
+	// 	return
+	// }
+
+	// err = ts.ExecuteTemplate(w, "base", nil)
+	// if err != nil {
+	// 	app.serverError(w, err)
+
+
+	// }
 }
-
-/*
-// 3.3 Dependency Injection
-
-	// Change the signature of the snippetView handler so it is defined as a method
-	// against *application.
-*/
 
 func(app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		// http.NotFound(w, r)
-
-		/*
-			3.4 Centalized Error:
-		*/
-		app.notFound(w) // Use the notFound() helper.
+		app.notFound(w) 
 		return
 	}
 
-	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+	/*
+		Single-record SQL queries: Using the model in our handlers
+
+		// Use the SnippetModel object's Get method to retrieve the data for a
+		// specific record based on its ID. If no matching record is found,
+		// return a 404 Not Found response.
+	*/
+	snippet, err := app.snippets.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	// fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+
+	/*
+		// 4.7 Single-record SQL queries: Using the model in our handlers
+
+		// Write the snippet data as a plain-text HTTP response body.
+	*/
+	fmt.Fprintf(w, "%+v", snippet)
 }
-
-/*
-// 3.3 Dependency Injection
-
-	// Change the signature of the snippetView handler so it is defined as a method
-	// against *application.
-*/
 
 func(app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
-		// http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		app.clientError(w, http.StatusMethodNotAllowed)
 
-		/*
-			3.4 Centalized Error:
-		*/
-		app.clientError(w, http.StatusMethodNotAllowed) // Use the clientError() helper.
-		
 		return
 	}
 
-	w.Write([]byte("Creating a new snippet"))
+	/*
+		// 4.6 Executing SQL statements
+
+		// Creatimg some variables holding dummy data.
+	*/
+	title := "O snail"
+	content := "O snail\nClimb Mount Fuji, \nBut slowly, slowly!\n\n-Kobayashi Issa"
+	expires := 7
+
+	/*
+		// 4.6 Executing SQL statements
+
+		// Pass the data to the SnippetModel.Insert() method, receiving the
+		// ID of the new record back.
+	*/
+	id, err := app.snippets.Insert(title, content, expires)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	/*
+		// 4.6 Executing SQL statements
+
+		// Redirect the user to the relevant page for the snippet.
+	*/
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
 }

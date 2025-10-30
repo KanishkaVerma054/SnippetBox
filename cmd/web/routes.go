@@ -2,11 +2,6 @@ package main
 
 import "net/http"
 
-/*
-	// 3.5: Isolating the application routes
-
-	// The routes() method returns a servemux containing our application routes.
-*/
 func(app *application) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 
