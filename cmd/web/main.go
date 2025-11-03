@@ -44,11 +44,6 @@ func main() {
 
 	defer db.Close()
 
-	/*
-		// 5.3 Caching Templates
-
-		// Initialize a new template cache...
-	*/
 	templateCache, err := newTemplateCache()
 	if err != nil {
 		errorLog.Fatal(err)
@@ -59,11 +54,6 @@ func main() {
 		infoLog: infoLog,
 		snippets: &models.SnippetModel{DB: db},
 
-		/*
-			// 5.3 Caching Templates
-
-			// And add it to the application dependencies.
-		*/
 		templateCache: templateCache,
 	}
 
