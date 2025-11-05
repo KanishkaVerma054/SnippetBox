@@ -9,20 +9,21 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-playground/form"
 	_ "github.com/go-sql-driver/mysql"
 )
 
+/*
+	// 8.6 Automatic form parsing
+
+	// Add a formDecoder field to hold a pointer to a form.Decoder instance.
+*/
 type application struct {
-	errorLog	*log.Logger
-	infoLog		*log.Logger
-	snippets *models.SnippetModel
-
-	/*
-		// 5.3 Caching Templates
-
-		// Add a templateCache field to the application struct.
-	*/
+	errorLog		*log.Logger
+	infoLog			*log.Logger
+	snippets 		*models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecoder		*form.Decoder
 }
 
 func main() {
@@ -49,12 +50,25 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	/*
+		// 8.6 Automatic form parsing
+
+		// Initialize a decoder instance...
+	*/
+	formDecoder := form.NewDecoder()
+
 	app := &application{
 		errorLog: errorLog,
 		infoLog: infoLog,
 		snippets: &models.SnippetModel{DB: db},
-
 		templateCache: templateCache,
+
+		/*
+			// 8.6 Automatic form parsing
+
+			// And add it to the application dependencies.
+		*/
+		formDecoder: formDecoder,
 	}
 
 	srv := &http.Server{
@@ -64,9 +78,7 @@ func main() {
 	}
 
 	infoLog.Printf("Staring server on %s", *addr)
-
 	err = srv.ListenAndServe()
-
 	errorLog.Fatal(err)
 }
 
