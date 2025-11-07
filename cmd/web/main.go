@@ -13,13 +13,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/alexedwards/scs/mysqlstore"
 	"github.com/alexedwards/scs/v2"
+	"crypto/tls"
 )
-
-/*
-	// 9.2 Setting up the session manager
-
-	// Add a new sessionManager field to the application struct.
-*/
 type application struct {
 	errorLog		*log.Logger
 	infoLog			*log.Logger
@@ -53,18 +48,20 @@ func main() {
 		errorLog.Fatal(err)
 	}
 	formDecoder := form.NewDecoder()
-
-	/*
-		// 9.2 Setting up the session manager
-
-		// Use the scs.New() function to initialize a new session manager. Then we
-		// configure it to use our MySQL database as the session store, and set a
-		// lifetime of 12 hours (so that sessions automatically expire 12 hours
-		// after first being created).
-	*/
 	sessionManager := scs.New()
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
+
+	/*
+		// 10.2 Running a HTTPS server
+
+		// Make sure that the Secure attribute is set on our session cookies.
+		// Setting this means that the cookie will only be sent by a user's web
+		// browser when a HTTPS connection is being used (and won't be sent over an
+		// unsecure HTTP connection).
+	*/
+	// sessionManager.Cookie.Secure = true
+	sessionManager.Cookie.Secure = false // to run it locally
 
 
 	app := &application{
@@ -73,23 +70,49 @@ func main() {
 		snippets: &models.SnippetModel{DB: db},
 		templateCache: templateCache,
 		formDecoder: formDecoder,
-
-		/*
-			// 9.2 Setting up the session manager
-
-			// And add the session manager to our application dependencies.
-		*/
 		sessionManager: sessionManager,
+	}
+
+	/*
+		// 10.2 Configuring HTTPS settings
+
+		// Initialize a tls.Config struct to hold the non-default TLS settings we
+		// want the server to use. In this case the only thing that we're changing
+		// is the curve preferences value, so that only elliptic curves with
+		// assembly implementations are used.
+	*/
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
 	}
 
 	srv := &http.Server{
 		Addr:	*addr,
 		ErrorLog: errorLog,
 		Handler: app.routes(),
+		TLSConfig: tlsConfig,
+
+		/*
+			10.2 Configuring HTTPS settings
+
+			// Add Idle, Read and Write timeouts to the server.
+		*/
+		IdleTimeout: time.Minute,
+		ReadTimeout: 5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	infoLog.Printf("Staring server on %s", *addr)
+	
 	err = srv.ListenAndServe()
+	/*
+		// 10.2 Running a HTTPS server
+
+		// Use the ListenAndServeTLS() method to start the HTTPS server. We
+		// pass in the paths to the TLS certificate and corresponding private key as
+		// the two parameters.
+	*/
+	// err = srv.ListenAndServeTLS("./tls/localhost+2.pem", "./tls/localhost+2-key.pem")
+
 	errorLog.Fatal(err)
 }
 
