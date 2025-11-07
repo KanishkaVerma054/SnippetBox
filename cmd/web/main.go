@@ -8,15 +8,17 @@ import (
 	"log"
 	"net/http"
 	"os"
-
+	"time"
 	"github.com/go-playground/form"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 )
 
 /*
-	// 8.6 Automatic form parsing
+	// 9.2 Setting up the session manager
 
-	// Add a formDecoder field to hold a pointer to a form.Decoder instance.
+	// Add a new sessionManager field to the application struct.
 */
 type application struct {
 	errorLog		*log.Logger
@@ -24,6 +26,7 @@ type application struct {
 	snippets 		*models.SnippetModel
 	templateCache map[string]*template.Template
 	formDecoder		*form.Decoder
+	sessionManager  *scs.SessionManager
 }
 
 func main() {
@@ -49,26 +52,34 @@ func main() {
 	if err != nil {
 		errorLog.Fatal(err)
 	}
+	formDecoder := form.NewDecoder()
 
 	/*
-		// 8.6 Automatic form parsing
+		// 9.2 Setting up the session manager
 
-		// Initialize a decoder instance...
+		// Use the scs.New() function to initialize a new session manager. Then we
+		// configure it to use our MySQL database as the session store, and set a
+		// lifetime of 12 hours (so that sessions automatically expire 12 hours
+		// after first being created).
 	*/
-	formDecoder := form.NewDecoder()
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 
 	app := &application{
 		errorLog: errorLog,
 		infoLog: infoLog,
 		snippets: &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder: formDecoder,
 
 		/*
-			// 8.6 Automatic form parsing
+			// 9.2 Setting up the session manager
 
-			// And add it to the application dependencies.
+			// And add the session manager to our application dependencies.
 		*/
-		formDecoder: formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	srv := &http.Server{

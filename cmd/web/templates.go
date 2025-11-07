@@ -17,10 +17,11 @@ var functions = template.FuncMap{
 
 type templateData struct {
 
-	Snippet *models.Snippet
-	Snippets []*models.Snippet
+	Snippet 	*models.Snippet
+	Snippets 	[]*models.Snippet
 	CurrentYear int
-	Form	any
+	Form		any
+	Flash		string // 9.3 Working with session data: //Add a Flash field to the templateData struct.
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
