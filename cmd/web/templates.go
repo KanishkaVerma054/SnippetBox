@@ -16,11 +16,24 @@ var functions = template.FuncMap{
 }
 
 type templateData struct {
-	Snippet 	*models.Snippet
-	Snippets 	[]*models.Snippet
-	CurrentYear int
-	Form		any
-	Flash		string
+	Snippet 		*models.Snippet
+	Snippets 		[]*models.Snippet
+	CurrentYear 	int
+	Form			any
+	Flash			string
+	/*
+		// 11.6. User authorization
+
+		// Add an IsAuthenticated field to the templateData struct.
+	*/
+	IsAuthenticated	bool
+
+	/*
+		// 11.7. CSRF protection: Using the nosurf package
+
+		// Add a CSRFToken field.
+	*/
+	CSRFToken		string
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

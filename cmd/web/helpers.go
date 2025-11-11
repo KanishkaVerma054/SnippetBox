@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-playground/form"
+	"github.com/justinas/nosurf"
 )
 
 func(app *application) serverError(w http.ResponseWriter, err error){
@@ -52,6 +53,20 @@ func(app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
 		CurrentYear: time.Now().Year(),
 		Flash: app.sessionManager.PopString(r.Context(), "flash"),
+
+		/*
+			// 11.6. User authorization
+
+			// Add the authentication status to the template data.
+		*/
+		IsAuthenticated: app.isAuthenticated(r),
+
+		/*
+			// 11.7. CSRF protection: Using the nosurf package
+
+			// Add the CSRF token.
+		*/
+		CSRFToken: nosurf.Token(r),
 	}
 }
 
@@ -70,4 +85,13 @@ func(app *application) decodePostForm(r *http.Request, dst any) error {
 		return err
 	}
 	return nil
+}
+
+/*
+	// 11.6. User authorization
+
+	// Return true if the current request is from a authenticated user, otherwise return false.
+*/
+func (app *application) isAuthenticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
 }

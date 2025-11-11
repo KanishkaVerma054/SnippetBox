@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/justinas/nosurf"
 )
 
 func secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy",
-		"default-src 'self'; style-src 'self' fonts.googleapis.com; font-src fonts.gstatic.com")
+			"default-src 'self'; style-src 'self' fonts.googleapis.com; font-src fonts.gstatic.com")
 
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -27,8 +29,8 @@ func (app *application) logRequest(next http.Handler) http.Handler {
 	})
 }
 
-func(app *application) recoverPanic(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)  {	
+func (app *application) recoverPanic(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				w.Header().Set("Connection", "close")
@@ -38,4 +40,55 @@ func(app *application) recoverPanic(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+/*
+// 11.6. User authorization: Restricting access
+*/
+func (app *application) requireAuthentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		/*
+			// 11.6. User authorization: Restricting access
+
+			// If the user is not authenticated, redirect them to the login page and
+			// return from the middleware chain so that no subsequent handlers in
+			// the chain are executed.
+		*/
+		if !app.isAuthenticated(r) {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			return
+		}
+
+		/*
+			// 11.6. User authorization: Restricting access
+
+			// Otherwise set the "Cache-Control: no-store" header so that pages
+			// require authentication are not stored in the users browser cache (or
+			// other intermediary cache).
+		*/
+		w.Header().Add("Cache-Control", "no-store")
+
+		/*
+			// 11.6. User authorization: Restricting access
+
+			// And call the next handler in the chain.
+		*/
+		next.ServeHTTP(w, r)
+	})
+}
+
+/*
+	// 11.7 CSRF protection: Using the nosurf package
+
+	// Create a NoSurf middleware function which uses a customized CSRF cookie with
+	// the Secure, Path and HttpOnly attributes set.
+*/
+func noSurf(next http.Handler) http.Handler {
+	csrfHandler := nosurf.New(next)
+	csrfHandler.SetBaseCookie(http.Cookie{
+		HttpOnly: true,
+		Path:     "./",
+		Secure:   false, // make it true for https in prod
+	})
+	return csrfHandler
 }
