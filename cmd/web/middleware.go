@@ -65,62 +65,27 @@ func noSurf(next http.Handler) http.Handler {
 	return csrfHandler
 }
 
-/*
-	// 12.2 Request context for authentication/authorization
-
-	// create a new authenticate() middleware method which:
-		// 1. Retrieves the user’s ID from their session data.
-		// 2. Checks the database to see if the ID corresponds to a valid user using the UserModel.Exists() method.
-		// 3. Updates the request context to include an isAuthenticatedContextKey key with the value true.
-*/
 func (app *application)  authenticate(next http.Handler) http.Handler {
 	
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		
-		/*
-			// 12.2 Request context for authentication/authorization
 
-			// Retrieve the authenticatedUserID value from the session using the
-			// GetInt() method. This will return the zero value for an int (0) if no
-			// "authenticatedUserID" value is in the session -- in which case we
-			// call the next handler in the chain as normal and return.
-		*/
 		id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
 		if id == 0 {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		/*
-			// 12.2 Request context for authentication/authorization
-
-			// Otherwise, we check to see if a user with that ID exists in our database.
-		*/
 		exists, err := app.users.Exists(id)
 		if err != nil {
 			app.serverError(w, err)
 			return
 		}
 
-		/*
-			// 12.2 Request context for authentication/authorization
-
-			// If a matching user is found, we know that the request is
-			// coming from an authenticated user who exists in our database. We
-			// create a new copy of the request (with an isAuthenticatedContextKey
-			// value of true in the request context) and assign it to r.
-		*/
 		if exists {
 			ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
 
 			r = r.WithContext(ctx)
 		}
-
-		/*
-			// 12.2 Request context for authentication/authorization
-
-			// Call the next handler in the chain.
-		*/	
 		next.ServeHTTP(w, r)
 	})
 }
