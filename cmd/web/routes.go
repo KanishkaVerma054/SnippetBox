@@ -17,18 +17,15 @@ func(app *application) routes() http.Handler {
 
 	filerServer := http.FileServer(http.Dir("./ui/static"))
 	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("./static", filerServer))
-	
-	/*
-		// 11.6 User authorization: Restricting access
 
-		// Unprotected application routes using the "dynamic" middleware chain.
-	*/
-	// dynamic := alice.New(app.sessionManager.LoadAndSave)
+	// dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
 
 	/*
-		// 11.7. CSRF protection: Using the nosurf package
+		// 12.2 Request context for authentication/authorization
+
+		// Add the authenticate() middleware to the chain.
 	*/
-	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
+	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 
 	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
 	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
@@ -38,40 +35,8 @@ func(app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
 	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
 
-	// router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.snippetCreate))
-	// router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
-
-	/*
-		// 11.1 Routes setup
-
-		// Add the five new routes, all of which use our 'dynamic' middleware chain.
-	*/
-	// router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignup))
-	// router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignupPost))
-	// router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
-	// router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
-
-	/*
-		// 11.6. User authorization: Restricting access
-
-		// Protected (authenticated-only) application routes, using a new "protected"
-		// middleware chain which includes the requireAuthentication middleware.
-	*/
-	// protected := dynamic.Append(app.requireAuthentication)
-
-	/*
-		// 11.7 CSRF protection
-
-		// Because the 'protected' middleware chain appends to the 'dynamic' chain
-		// the noSurf middleware will also be used on the three routes below too.
-	*/
 	protected := dynamic.Append(app.requireAuthentication)
 
-	/*
-		//11.6 User authorization: Restricting access
-
-		// Protected (authenticated-only) application routes, using a new "protected"
-	*/
 	router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.snippetCreate))
 	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.snippetCreatePost))
 

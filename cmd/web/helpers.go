@@ -54,18 +54,8 @@ func(app *application) newTemplateData(r *http.Request) *templateData {
 		CurrentYear: time.Now().Year(),
 		Flash: app.sessionManager.PopString(r.Context(), "flash"),
 
-		/*
-			// 11.6. User authorization
-
-			// Add the authentication status to the template data.
-		*/
 		IsAuthenticated: app.isAuthenticated(r),
 
-		/*
-			// 11.7. CSRF protection: Using the nosurf package
-
-			// Add the CSRF token.
-		*/
 		CSRFToken: nosurf.Token(r),
 	}
 }
@@ -87,11 +77,18 @@ func(app *application) decodePostForm(r *http.Request, dst any) error {
 	return nil
 }
 
-/*
-	// 11.6. User authorization
-
-	// Return true if the current request is from a authenticated user, otherwise return false.
-*/
 func (app *application) isAuthenticated(r *http.Request) bool {
-	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+	// return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+
+	/*
+		// 12.2 Request context for authentication/authorization
+
+		// update isAuthenticated() helper, so that instead of checking the session data it now will checks
+		// the request context to determine if a user is authenticated or not.
+	*/
+	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+	if !ok {
+		return false
+	}
+	return isAuthenticated
 }

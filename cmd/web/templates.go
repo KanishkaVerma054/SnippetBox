@@ -21,18 +21,7 @@ type templateData struct {
 	CurrentYear 	int
 	Form			any
 	Flash			string
-	/*
-		// 11.6. User authorization
-
-		// Add an IsAuthenticated field to the templateData struct.
-	*/
 	IsAuthenticated	bool
-
-	/*
-		// 11.7. CSRF protection: Using the nosurf package
-
-		// Add a CSRFToken field.
-	*/
 	CSRFToken		string
 }
 

@@ -19,13 +19,7 @@ type application struct {
 	errorLog		*log.Logger
 	infoLog			*log.Logger
 	snippets 		*models.SnippetModel
-	/*
-		// 11.2 Creating a users model:	Building the model in Go
-
-		// Add a new users field to the application struct.
-	*/
 	users			*models.UserModel
-
 	templateCache 	map[string]*template.Template
 	formDecoder		*form.Decoder
 	sessionManager  *scs.SessionManager
@@ -75,13 +69,7 @@ func main() {
 		errorLog: 		errorLog,
 		infoLog: 		infoLog,
 		snippets: 		&models.SnippetModel{DB: db},
-		/*
-			// 11.2 Creating a users model:	Building the model in Go
-
-			// Initialize a models.UserModel instance and add it to the application dependencies.
-		*/
 		users: 			&models.UserModel{DB: db},
-
 		templateCache: 	templateCache,
 		formDecoder: 	formDecoder,
 		sessionManager: sessionManager,
