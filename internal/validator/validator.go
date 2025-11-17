@@ -43,14 +43,6 @@ func MaxChars(value string, n int) bool {
 	return utf8.RuneCountInString(value) <= n
 }
 
-/*
-	// 13.2 Using generics
-
-	// Replace PermittedInt() with a generic PermittedValue() function. This returns
-	// true if the value of type T equals one of the variadic permittedValues
-	// parameters.
-*/
-// func PermittedInt(value int, permittedValues ...int) bool {
 func PermittedValue[T comparable](value T, permittedValues ...T) bool {
 	for i := range permittedValues {
 		if value == permittedValues[i] {
@@ -61,7 +53,6 @@ func PermittedValue[T comparable](value T, permittedValues ...T) bool {
 }
 
 var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zAZ0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-
 
 func MinChars(value string, n int) bool {
 	return utf8.RuneCountInString(value) >= n

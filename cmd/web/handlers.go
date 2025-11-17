@@ -5,6 +5,7 @@ import (
 	"KanishkaVerma054/snipperBox.dev/internal/validator"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -21,13 +22,25 @@ type userSignupForm struct {
 	Name                string `form:"name"`
 	Email               string `form:"email"`
 	Password            string `form:"password"`
-	validator.Validator `form:"_"`
+	validator.Validator `form:"-"`
 }
 
 type userLoginForm struct {
-	Email				string `form:"email"`
-	Password			string `form:"password"`
-	validator.Validator	`form:"_"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
+/*
+// 14.2 Testing HTTP handlers and middleware
+
+// create a new ping handler function which returns a 200 OK status
+// code and an "OK" response body.
+// It’s the type of handler that you might want to implement for
+// status-checking or uptime monitoring of your server.
+*/
+func ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("OK"))
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -80,8 +93,8 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-
 	var form snippetCreateForm
+
 	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
@@ -91,15 +104,6 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
 	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
-
-	// form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
-
-	/*
-		// 13.2 Using generics
-
-		// Use the generic PermittedValue() function instead of the type-specific
-		// PermittedInt() function.
-	*/
 	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
 
 	if !form.Valid() {
@@ -120,6 +124,17 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
+
+	log.Printf("DEBUG: signup handler started; Content-Type=%q", r.Header.Get("Content-Type"))
+
+	if err := r.ParseForm(); err != nil {
+    log.Printf("DEBUG: ParseForm error: %v", err)
+    app.clientError(w, http.StatusBadRequest)
+    return
+	}
+	log.Printf("DEBUG: After ParseForm: r.Form=%#v, r.PostForm=%#v", r.Form, r.PostForm)
+	log.Printf("DEBUG: csrf in form: %q", r.PostForm.Get("csrf_token"))
+
 	data := app.newTemplateData(r)
 	data.Form = userSignupForm{}
 	app.render(w, http.StatusOK, "signup.html", data)
@@ -151,8 +166,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 			form.AddFieldError("email", "Email address is already in use")
 			data := app.newTemplateData(r)
 			data.Form = form
-			app.render(w, http.StatusUnprocessableEntity, "signup.tmpl",
-				data)
+			app.render(w, http.StatusUnprocessableEntity, "signup.tmpl", data)
 		} else {
 			app.serverError(w, err)
 		}

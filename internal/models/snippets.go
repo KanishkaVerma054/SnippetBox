@@ -6,6 +6,18 @@ import (
 	"time"
 )
 
+/*
+	// 14.5 Mocking dependencies: Mocking the database models
+		
+	// create a new SnippetModelInterface interface type that describes
+	//the methods that the actual SnippetModel struct has.
+*/
+type SnippetModelInterface interface {
+	Insert(title string, content string, expires int) (int, error)
+	Get(id int) (*Snippet, error)
+	Latest() ([]*Snippet, error)
+}
+
 type Snippet struct {
 	ID		int
 	Title	string

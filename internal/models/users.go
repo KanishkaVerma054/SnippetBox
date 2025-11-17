@@ -10,6 +10,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+/*
+	// 14.5 Mocking dependencies: Mocking the database models
+		
+	// create a new UserModelInterface interface type that describes
+	// the methods that the actual UserModel struct has.
+*/
+type UserModelInterface interface {
+	Insert(name, email, password string) error
+	Authenticate(email, password string) (int, error)
+	Exists(id int) (bool, error)
+}
+
 type User struct {
 	ID             int
 	Name           string

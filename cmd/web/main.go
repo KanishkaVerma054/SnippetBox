@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 	"time"
-	"github.com/go-playground/form"
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/alexedwards/scs/mysqlstore"
 	"github.com/alexedwards/scs/v2"
@@ -18,8 +18,16 @@ import (
 type application struct {
 	errorLog		*log.Logger
 	infoLog			*log.Logger
-	snippets 		*models.SnippetModel
-	users			*models.UserModel
+	// snippets 		*models.SnippetModel
+	// users			*models.UserModel
+
+	/*
+		// 14.5 Mocking dependencies: Mocking the database models
+
+		// Using the new interface type
+	*/
+	snippets 		models.SnippetModelInterface
+	users			models.UserModelInterface
 	templateCache 	map[string]*template.Template
 	formDecoder		*form.Decoder
 	sessionManager  *scs.SessionManager

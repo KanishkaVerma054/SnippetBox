@@ -8,7 +8,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/go-playground/form"
+	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
 )
 
@@ -65,11 +65,12 @@ func(app *application) decodePostForm(r *http.Request, dst any) error {
 	if err != nil {
 		return err
 	}
+
 	err = app.formDecoder.Decode(dst, r.PostForm)
 	if err != nil {
-		var InvalidDecoderError *form.InvalidDecoderError
+		var invalidDecoderError *form.InvalidDecoderError
 
-		if errors.As(err, &InvalidDecoderError) {
+		if errors.As(err, &invalidDecoderError) {
 			panic(err)
 		}
 		return err
