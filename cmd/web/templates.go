@@ -56,7 +56,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// 13.1 Using embedded files: Embedding HTML templates
 
 		// Use fs.Glob() to get a slice of all filepaths in the ui.Files embedded
-		// filesystem which match the pattern 'html/pages/*.tmpl'. This essentially
+		// filesystem which match the pattern 'html/pages/*.html'. This essentially
 		// gives us a slice of all the 'page' templates for the application, just like before.
 	*/
 	pages, err := fs.Glob(ui.Files, "html/pages/*.html")

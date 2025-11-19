@@ -5,7 +5,6 @@ import (
 	"KanishkaVerma054/snipperBox.dev/internal/validator"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -125,16 +124,6 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
 
-	log.Printf("DEBUG: signup handler started; Content-Type=%q", r.Header.Get("Content-Type"))
-
-	if err := r.ParseForm(); err != nil {
-    log.Printf("DEBUG: ParseForm error: %v", err)
-    app.clientError(w, http.StatusBadRequest)
-    return
-	}
-	log.Printf("DEBUG: After ParseForm: r.Form=%#v, r.PostForm=%#v", r.Form, r.PostForm)
-	log.Printf("DEBUG: csrf in form: %q", r.PostForm.Get("csrf_token"))
-
 	data := app.newTemplateData(r)
 	data.Form = userSignupForm{}
 	app.render(w, http.StatusOK, "signup.html", data)
@@ -166,7 +155,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 			form.AddFieldError("email", "Email address is already in use")
 			data := app.newTemplateData(r)
 			data.Form = form
-			app.render(w, http.StatusUnprocessableEntity, "signup.tmpl", data)
+			app.render(w, http.StatusUnprocessableEntity, "signup.html", data)
 		} else {
 			app.serverError(w, err)
 		}
